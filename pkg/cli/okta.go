@@ -409,10 +409,21 @@ func (c *Client) CreateGroup(ctx context.Context, name, description string) (Gro
 	return created, nil
 }
 
+// GroupsByPrefix returns every group whose name starts with prefix, following the cursor to the
+// end. An empty prefix lists the whole org.
+//
+// The filter is search rather than q. Okta caps q at 200 matches and sends no cursor along with
+// them, so any prefix covering more groups than that came back truncated with nothing to say it
+// had been -- a bulk assign would quietly reach the first 200 and stop. search paginates like the
+// rest of the API.
+//
+// The catch is that search reads an index that lags writes by a few seconds, so groups created
+// moments earlier may not be here yet. Give a create a moment to settle before assigning against
+// it.
 func (c *Client) GroupsByPrefix(ctx context.Context, prefix string) ([]Group, error) {
 	path := fmt.Sprintf("/api/v1/groups?limit=%d", pageSize)
 	if prefix != "" {
-		path += "&q=" + url.QueryEscape(prefix)
+		path += "&search=" + url.QueryEscape(fmt.Sprintf("profile.name sw %q", prefix))
 	}
 
 	groups, err := listAll[Group](ctx, c, path, 0)
@@ -420,8 +431,8 @@ func (c *Client) GroupsByPrefix(ctx context.Context, prefix string) ([]Group, er
 		return nil, err
 	}
 
-	// q is a starts-with match on Okta's side, but re-filter locally so callers can trust that
-	// every group returned really carries the prefix.
+	// search is a starts-with match on Okta's side, but re-filter locally so callers can trust
+	// that every group returned really carries the prefix.
 	filtered := groups[:0]
 	for _, g := range groups {
 		if strings.HasPrefix(g.Profile.Name, prefix) {
