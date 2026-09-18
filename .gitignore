@@ -1,0 +1,41 @@
+# Binaries
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage output
+*.test
+*.out
+coverage.*
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Dependency directory (uncomment if you vendor)
+# vendor/
+
+# Credentials -- this tool signs JWTs with an Okta private key, so keep key
+# material out of the repo entirely rather than naming files one at a time.
+*.pem
+*.key
+okta.pem
+
+# Environment
+.envrc
+.direnv/
+.env
+.env.*
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
